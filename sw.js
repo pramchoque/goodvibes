@@ -1,7 +1,7 @@
 /* Good Vibes Playlist — service worker
    Naikkan nomor CACHE setiap kali kamu mengubah index.html,
    supaya versi lama tidak nyangkut di ponsel pengunjung. */
-const CACHE = "goodvibes-v1";
+const CACHE = "goodvibes-v2";
 const SHELL = [
   "./",
   "./index.html",
@@ -30,8 +30,8 @@ self.addEventListener("fetch", e => {
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
 
-  // daftar lagu: jaringan dulu supaya versi terbaru terpakai
-  if (url.pathname.endsWith("lagu.json")) {
+  // daftar lagu & konfigurasi: jaringan dulu supaya versi terbaru terpakai
+  if (url.pathname.endsWith("lagu.json") || url.pathname.endsWith("konfigurasi.js")) {
     e.respondWith(
       fetch(req).then(res => {
         const copy = res.clone();
