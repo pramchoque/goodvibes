@@ -70,6 +70,7 @@
     background:var(--glass);border:1px solid var(--line);color:var(--text);
     display:grid;place-items:center;
   }
+  .iconbtn[hidden]{display:none!important}
   .iconbtn svg{width:17px;height:17px}
   .iconbtn:active{transform:scale(.93)}
 
@@ -970,6 +971,7 @@ function importJson(){
 /* ---------- navigasi ---------- */
 const SCREENS={auth:"scAuth",mood:"scMood",home:"scHome",search:"scSearch",fav:"scFav",manage:"scManage"};
 function go(name){
+  if(name==="manage" && !canEdit() && !(!GATE_ON && secretUnlock)) name="home";
   tab=name;
   document.body.classList.toggle("intro", name==="mood"||name==="auth");
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
