@@ -1,7 +1,7 @@
 /* Good Vibes Playlist — service worker
    Naikkan nomor CACHE setiap kali kamu mengubah index.html,
    supaya versi lama tidak nyangkut di ponsel pengunjung. */
-const CACHE = "goodvibes-v3";
+const CACHE = "goodvibes-v4";
 const SHELL = [
   "./",
   "./index.html",

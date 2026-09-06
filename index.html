@@ -236,6 +236,14 @@
   .acct .who b{display:block;font:600 14px var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .acct .who span{display:block;color:var(--muted);font-size:12.5px}
   .authwrap{max-width:330px;margin:0 auto;padding:34px 0}
+  .gatewrap{max-width:340px;margin:0 auto;min-height:100dvh;
+    display:flex;flex-direction:column;justify-content:center;padding:40px 0}
+  .gatewrap .brand{font-family:var(--display);font-weight:800;font-size:clamp(30px,8vw,40px);
+    line-height:1.02;letter-spacing:-.03em;margin:10px 0 0;
+    background:linear-gradient(103deg,#FFF 6%,var(--mango) 44%,var(--coral) 72%,var(--violet) 98%);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .gatewrap .lead{color:var(--muted);font-size:15px;margin:12px 0 24px}
+  .booting{text-align:center;color:var(--muted);font-size:14.5px;padding:40px 0}
   .authwrap h2{font-family:var(--display);font-weight:600;font-size:21px;margin:0 0 6px;text-align:center}
   .switch{display:block;margin:14px auto 0;background:none;border:0;cursor:pointer;
     font:500 13.5px var(--sans);color:var(--muted);text-decoration:underline}
@@ -284,6 +292,9 @@
 </div>
 
 <main>
+  <!-- ===== MASUK ===== -->
+  <section class="screen" id="scAuth"></section>
+
   <!-- ===== PILIH MOOD ===== -->
   <section class="screen on" id="scMood">
     <div class="moodwrap">
@@ -442,18 +453,25 @@ async function toggleFav(s){
 }
 
 async function initAuth(){
-  if(!SB_URL||!SB_KEY) return;
+  if(!GATE_ON){ booted=true; return; }
   try{
     const {createClient}=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
     sb=createClient(SB_URL,SB_KEY);
-    const {data}=await sb.auth.getSession();
-    user=data.session?data.session.user:null;
+    const {data:sess}=await sb.auth.getSession();
+    user=sess.session?sess.session.user:null;
     sb.auth.onAuthStateChange(async(_e,s)=>{
+      const before=!!user;
       user=s?s.user:null;
       await loadFavs(); render();
+      if(user&&!before) afterLogin();
+      if(!user) go("auth");
     });
-    await loadFavs(); render();
-  }catch(e){ sb=null; }
+    await loadFavs();
+    booted=true; render();
+    if(user) afterLogin(); else go("auth");
+  }catch(e){
+    sb=null; authError=true; booted=true; render();
+  }
 }
 
 async function doAuth(){
@@ -474,24 +492,47 @@ async function doAuth(){
   btn.disabled=false; render();
 }
 
-function renderFav(){
-  const sc=$("scFav");
-  if(sb&&!user){
-    sc.innerHTML=
-      '<div class="authwrap">'+
-        '<h2>'+(authMode==="signup"?"Buat akun":"Masuk")+'</h2>'+
-        '<p class="hint" style="text-align:center;margin-bottom:18px">Simpan lagu favoritmu supaya bisa dibuka lagi dari perangkat mana pun.</p>'+
-        '<label class="field"><span>Email</span><input id="aEmail" type="email" inputmode="email" autocomplete="email"></label>'+
-        '<label class="field"><span>Kata sandi</span><input id="aPass" type="password" autocomplete="current-password"></label>'+
-        '<div class="btnrow"><button class="btn" id="aGo">'+(authMode==="signup"?"Daftar":"Masuk")+'</button></div>'+
-        '<button class="switch" id="aSwitch">'+(authMode==="signup"?"Sudah punya akun? Masuk":"Belum punya akun? Daftar")+'</button>'+
-      '</div>';
-    $("aGo").onclick=doAuth;
-    $("aPass").onkeydown=e=>{ if(e.key==="Enter") doAuth(); };
-    $("aSwitch").onclick=()=>{ authMode=authMode==="signup"?"login":"signup"; render(); };
+const GATE_ON = !!(SB_URL && SB_KEY);
+let booted=false, authError=false;
+
+function afterLogin(){ go(moodList().length ? "mood" : "home"); }
+
+function renderAuth(){
+  const sc=$("scAuth");
+  if(!booted){
+    sc.innerHTML='<div class="gatewrap"><p class="booting">Menyiapkan...</p></div>';
     return;
   }
+  if(authError){
+    sc.innerHTML=
+      '<div class="gatewrap">'+
+        '<p class="kicker">Ada kendala</p>'+
+        '<h2 class="brand">Sistem akun gagal dimuat</h2>'+
+        '<p class="lead">Periksa koneksi internetmu, lalu muat ulang halaman ini.</p>'+
+        '<div class="btnrow"><button class="btn" id="aRetry">Muat ulang</button></div>'+
+      '</div>';
+    $("aRetry").onclick=()=>location.reload();
+    return;
+  }
+  sc.innerHTML=
+    '<div class="gatewrap">'+
+      '<p class="kicker">'+esc(data.title||"Good Vibes Playlist")+'</p>'+
+      '<h2 class="brand">'+(authMode==="signup"?"Buat akun dulu":"Masuk dulu, ya")+'</h2>'+
+      '<p class="lead">'+(authMode==="signup"
+        ? "Sekali daftar, favoritmu tersimpan dan bisa dibuka dari perangkat mana pun."
+        : "Masuk untuk membuka playlist dan favorit yang sudah kamu simpan.")+'</p>'+
+      '<label class="field"><span>Email</span><input id="aEmail" type="email" inputmode="email" autocomplete="email"></label>'+
+      '<label class="field"><span>Kata sandi</span><input id="aPass" type="password" autocomplete="'+(authMode==="signup"?"new-password":"current-password")+'"></label>'+
+      '<div class="btnrow"><button class="btn" id="aGo">'+(authMode==="signup"?"Daftar":"Masuk")+'</button></div>'+
+      '<button class="switch" id="aSwitch">'+(authMode==="signup"?"Sudah punya akun? Masuk":"Belum punya akun? Daftar")+'</button>'+
+    '</div>';
+  $("aGo").onclick=doAuth;
+  $("aPass").onkeydown=e=>{ if(e.key==="Enter") doAuth(); };
+  $("aSwitch").onclick=()=>{ authMode=authMode==="signup"?"login":"signup"; render(); };
+}
 
+function renderFav(){
+  const sc=$("scFav");
   const mine=data.songs.filter(isFav);
   sc.innerHTML=
     (user
@@ -544,8 +585,8 @@ async function load(){
   catch(e){ data=JSON.parse(JSON.stringify(base)); }
   await loadFavs();
   render();
-  go(moodList().length ? "mood" : "home");
-  initAuth();
+  if(GATE_ON){ go("auth"); initAuth(); }
+  else { booted=true; go(moodList().length ? "mood" : "home"); }
 }
 function save(){ lsSet(LS_KEY,JSON.stringify(data)); render(); }
 
@@ -625,6 +666,7 @@ function render(){
   list.forEach(s=>rw.appendChild(mkRow(s)));
   $("empty").hidden=list.length>0;
 
+  renderAuth();
   renderFav();
   renderManage();
 }
@@ -893,10 +935,10 @@ function importJson(){
 }
 
 /* ---------- navigasi ---------- */
-const SCREENS={mood:"scMood",home:"scHome",search:"scSearch",fav:"scFav",manage:"scManage"};
+const SCREENS={auth:"scAuth",mood:"scMood",home:"scHome",search:"scSearch",fav:"scFav",manage:"scManage"};
 function go(name){
   tab=name;
-  document.body.classList.toggle("intro", name==="mood");
+  document.body.classList.toggle("intro", name==="mood"||name==="auth");
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
   if(SCREENS[name]) $(SCREENS[name]).classList.add("on");
   document.querySelectorAll(".tabbar button").forEach(b=>
