@@ -252,7 +252,7 @@
     position:fixed;left:0;right:0;bottom:0;z-index:15;
     height:calc(var(--tab-h) + var(--safe-b));
     padding-bottom:var(--safe-b);
-    display:grid;grid-template-columns:repeat(4,1fr);
+    display:grid;grid-template-columns:repeat(3,1fr);
     background:rgba(20,15,28,.85);backdrop-filter:blur(22px);
     border-top:1px solid var(--line);
   }
@@ -286,6 +286,12 @@
 
 <div class="topbar" id="topbar">
   <span class="tt" id="barTitle">Good Vibes Playlist</span>
+  <button class="iconbtn" id="btnLogout" aria-label="Keluar dari akun" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+  </button>
+  <button class="iconbtn" id="btnAdmin" aria-label="Kelola daftar" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
   <button class="iconbtn" id="btnShuffle" aria-label="Lagu acak">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
   </button>
@@ -355,10 +361,6 @@
   <button data-tab="fav" aria-selected="false" role="tab">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0L12 6.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
     Favorit
-  </button>
-  <button data-tab="manage" aria-selected="false" role="tab">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-    Kelola
   </button>
 </nav>
 
@@ -462,10 +464,12 @@ async function initAuth(){
     sb.auth.onAuthStateChange(async(_e,s)=>{
       const before=!!user;
       user=s?s.user:null;
+      await checkAdmin();
       await loadFavs(); render();
       if(user&&!before) afterLogin();
       if(!user) go("auth");
     });
+    await checkAdmin();
     await loadFavs();
     booted=true; render();
     if(user) afterLogin(); else go("auth");
@@ -494,6 +498,23 @@ async function doAuth(){
 
 const GATE_ON = !!(SB_URL && SB_KEY);
 let booted=false, authError=false;
+let isAdmin=false;
+const secretUnlock = location.hash==="#kelola";
+
+/* Boleh mengedit? Kalau akun aktif, ditentukan tabel admins di Supabase.
+   Kalau akun belum disetel, jatuh ke kata sandi di konfigurasi.js. */
+const canEdit = () => GATE_ON ? isAdmin : admin;
+const showGear = () => GATE_ON ? isAdmin : secretUnlock;
+
+async function checkAdmin(){
+  isAdmin=false;
+  if(sb&&user){
+    try{
+      const {data:rows,error}=await sb.from("admins").select("user_id").eq("user_id",user.id).limit(1);
+      if(!error) isAdmin=!!(rows&&rows.length);
+    }catch(e){}
+  }
+}
 
 function afterLogin(){ go(moodList().length ? "mood" : "home"); }
 
@@ -546,9 +567,7 @@ function renderFav(){
 
   const rw=$("favRows");
   mine.forEach(s=>rw.appendChild(mkRow(s)));
-  if($("aOut")) $("aOut").onclick=async()=>{
-    await sb.auth.signOut(); user=null; await loadFavs(); render(); toast("Kamu sudah keluar");
-  };
+  if($("aOut")) $("aOut").onclick=signOut;
 }
 
 function toast(msg){
@@ -666,6 +685,8 @@ function render(){
   list.forEach(s=>rw.appendChild(mkRow(s)));
   $("empty").hidden=list.length>0;
 
+  $("btnLogout").hidden = !user;
+  $("btnAdmin").hidden = !showGear();
   renderAuth();
   renderFav();
   renderManage();
@@ -723,7 +744,15 @@ function mkRow(s){
 /* ---------- kelola ---------- */
 function renderManage(){
   const sc=$("scManage");
-  if(!admin){
+
+  // Akun aktif: yang bukan admin tidak boleh masuk sama sekali.
+  if(GATE_ON && !isAdmin){
+    sc.innerHTML='<div class="lock"><p class="hint">Halaman ini khusus admin.</p></div>';
+    return;
+  }
+
+  // Tanpa akun: masih pakai kata sandi dari konfigurasi.js.
+  if(!canEdit()){
     sc.innerHTML=
       '<div class="lock">'+
         '<div class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>'+
@@ -842,7 +871,11 @@ function renderManage(){
   $("bExport").onclick=exportJson;
   $("bImport").onclick=importJson;
   $("bShow").onclick=showJson;
-  $("bExit").onclick=()=>{admin=false;editingIndex=null;confirmDelete=null;render()};
+  $("bExit").onclick=()=>{
+    editingIndex=null; confirmDelete=null;
+    if(!GATE_ON) admin=false;
+    render(); go("home");
+  };
   if($("bReset")) $("bReset").onclick=()=>{
     lsDel(LS_KEY); data=JSON.parse(JSON.stringify(published));
     editingIndex=null; render(); toast("Perubahan dibuang");
@@ -948,6 +981,23 @@ function go(name){
 }
 document.querySelectorAll(".tabbar button").forEach(b=>b.onclick=()=>go(b.dataset.tab));
 
+async function signOut(){
+  if(!sb) return;
+  await sb.auth.signOut();
+  user=null; isAdmin=false;
+  await loadFavs(); render(); go("auth");
+  toast("Kamu sudah keluar");
+}
+
+let logoutArmed=false;
+$("btnLogout").onclick=()=>{
+  if(logoutArmed){ logoutArmed=false; signOut(); return; }
+  logoutArmed=true;
+  toast("Ketuk sekali lagi untuk keluar");
+  setTimeout(()=>{ logoutArmed=false; },3000);
+};
+
+$("btnAdmin").onclick=()=>go("manage");
 $("btnSkip").onclick=()=>{ filterTag=null; render(); go("home"); };
 $("btnAllSongs").onclick=()=>{ filterTag=null; render(); };
 $("btnChangeMood").onclick=()=>go("mood");
