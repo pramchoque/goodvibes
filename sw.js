@@ -1,7 +1,7 @@
 /* Good Vibes Playlist — service worker
    Naikkan nomor CACHE setiap kali kamu mengubah index.html,
    supaya versi lama tidak nyangkut di ponsel pengunjung. */
-const CACHE = "goodvibes-v9";
+const CACHE = "goodvibes-v10";
 const SHELL = [
   "./",
   "./index.html",
@@ -9,7 +9,8 @@ const SHELL = [
   "./icon-192.png",
   "./icon-512.png",
   "./icon-maskable-512.png",
-  "./apple-touch-icon.png"
+  "./apple-touch-icon.png",
+  "./banner.jpg"
 ];
 
 self.addEventListener("install", e => {

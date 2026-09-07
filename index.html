@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <title>Good Vibes Playlist</title>
-<meta name="theme-color" content="#0E0B12">
+<meta name="theme-color" content="#150E26">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,16 +16,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0E0B12;
-    --surface:#17141D;
-    --surface-2:#1F1B28;
-    --line:rgba(255,255,255,.08);
-    --text:#FFFFFF;
-    --muted:#8F8899;
-    --amber:#F5A93C;
-    --peach:#F9C08C;
-    --pink:#E86A9A;
-    --violet:#8B5CF6;
+    --bg:#150E26;
+    --surface:#221641;
+    --surface-2:#2C1D52;
+    --line:rgba(255,255,255,.09);
+    --text:#F8F2FB;
+    --muted:#A093C4;
+    --sun:#F9B36A;
+    --amber:#F9B36A;
+    --peach:#FFD3A0;
+    --magenta:#C95BA6;
+    --pink:#E06FB0;
+    --violet:#7C5BC9;
     --safe-b:env(safe-area-inset-bottom,0px);
     --safe-t:env(safe-area-inset-top,0px);
     --nav-h:64px;
@@ -47,9 +49,23 @@
   /* cahaya di balik header */
   .bloom{position:fixed;left:0;right:0;top:0;height:46vh;z-index:0;pointer-events:none;overflow:hidden}
   .bloom i{position:absolute;border-radius:50%;filter:blur(60px)}
-  .b1{width:70vw;height:44vw;left:-14vw;top:-16vw;background:var(--violet);opacity:.5}
-  .b2{width:62vw;height:38vw;right:-10vw;top:-12vw;background:var(--amber);opacity:.42}
-  .b3{width:48vw;height:30vw;left:26vw;top:-6vw;background:var(--pink);opacity:.36}
+  .b1{width:70vw;height:44vw;left:-14vw;top:-16vw;background:var(--violet);opacity:.55}
+  .b2{width:62vw;height:38vw;right:-10vw;top:-14vw;background:var(--sun);opacity:.4}
+  .b3{width:52vw;height:32vw;left:24vw;top:-4vw;background:var(--magenta);opacity:.42}
+
+  /* ---------- banner ---------- */
+  .banner{
+    position:relative;overflow:hidden;border-radius:24px;margin-top:20px;
+    aspect-ratio:16/9;background:linear-gradient(120deg,var(--violet),var(--magenta) 55%,var(--sun));
+    display:flex;align-items:flex-end;
+  }
+  .banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .banner .shade{position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(21,14,38,0) 34%,rgba(21,14,38,.86) 100%)}
+  .banner .btext{position:relative;padding:18px 20px 18px}
+  .banner h2{font-size:clamp(19px,5.4vw,26px);font-weight:600;line-height:1.15;letter-spacing:-.02em;margin:6px 0 0}
+  .banner .kick{color:var(--peach)}
+  @media (min-width:720px){ .banner{aspect-ratio:21/9} }
 
   main{position:relative;z-index:1;padding:0 20px}
   .pad{height:calc(var(--nav-h) + var(--safe-b) + 40px)}
@@ -99,7 +115,7 @@
   .feat{
     position:relative;overflow:hidden;border-radius:22px;padding:20px;
     min-height:180px;display:flex;flex-direction:column;justify-content:space-between;
-    background:linear-gradient(115deg,var(--peach),#F6A268);color:#231318;
+    background:linear-gradient(115deg,var(--peach),#F5946B 62%,#E06FB0);color:#2A1230;
   }
   .feat .art{
     position:absolute;right:0;top:0;bottom:0;width:44%;
@@ -112,9 +128,9 @@
   .feat p{font-size:13px;margin:7px 0 0;opacity:.78;line-height:1.45}
   .feat .acts{position:relative;display:flex;align-items:center;gap:14px;margin-top:20px}
   .fbtn{width:46px;height:46px;border-radius:50%;border:0;cursor:pointer;
-    background:#231318;color:#FFF;display:grid;place-items:center}
+    background:#2A1230;color:#FFF;display:grid;place-items:center}
   .fbtn svg{width:14px;height:14px;margin-left:2px}
-  .fico{background:none;border:0;cursor:pointer;color:#231318;padding:4px;display:grid;place-items:center}
+  .fico{background:none;border:0;cursor:pointer;color:#2A1230;padding:4px;display:grid;place-items:center}
   .fico svg{width:21px;height:21px}
   .fico.on svg{fill:currentColor}
   .fbtn:active,.fico:active{transform:scale(.9)}
@@ -141,6 +157,10 @@
 
   /* ---------- layar mood ---------- */
   body.intro .nav,body.intro .dock{display:none}
+  #scAuth .full{position:relative}
+  .authbg{position:fixed;inset:0;z-index:-1;background-size:cover;background-position:center;opacity:.34}
+  .authbg::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(21,14,38,.5),rgba(21,14,38,.95))}
   .full{min-height:100dvh;display:flex;flex-direction:column;justify-content:center;
     padding:calc(var(--safe-t) + 40px) 0 40px;max-width:400px;margin:0 auto}
   .kick{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
@@ -280,6 +300,15 @@
 
     <h1 class="greet">Hey, <b id="greetName">kamu</b></h1>
     <p class="sub" id="greetSub"></p>
+
+    <div class="banner">
+      <img src="banner.jpg" alt="" onerror="this.remove()">
+      <div class="shade"></div>
+      <div class="btext">
+        <p class="kick">Good music, brighter days</p>
+        <h2>Same songs,<br>brighter you</h2>
+      </div>
+    </div>
 
     <div class="chiprow" id="chips"></div>
 
@@ -648,6 +677,7 @@ function renderAuth(){
     return;
   }
   sc.innerHTML=
+    '<div class="authbg" style="background-image:url(banner.jpg)"></div>'+
     '<div class="full">'+
       '<p class="kick">'+esc(data.title||"Good Vibes Playlist")+'</p>'+
       '<h1 class="big">'+(authMode==="signup"?'Buat <b>akun dulu</b>':'Masuk <b>dulu, ya</b>')+'</h1>'+
